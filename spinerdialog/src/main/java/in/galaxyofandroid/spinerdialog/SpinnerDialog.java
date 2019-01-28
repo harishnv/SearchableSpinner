@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.Filter;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -18,12 +19,14 @@ import java.util.ArrayList;
  * Created by Md Farhan Raja on 2/23/2017.
  */
 
-public class SpinnerDialog {
+public class SpinnerDialog extends Filter {
     ArrayList<String> items;
     Activity context;
     String dTitle,closeTitle="Close";
     OnSpinerItemClick onSpinerItemClick;
     AlertDialog alertDialog;
+     ArrayAdapter<String> adapter;
+     ListView listView;
     int pos;
     int style;
 
@@ -67,9 +70,10 @@ public class SpinnerDialog {
         TextView title = (TextView) v.findViewById(R.id.spinerTitle);
         rippleViewClose.setText(closeTitle);
         title.setText(dTitle);
-        final ListView listView = (ListView) v.findViewById(R.id.list);
+        listView = (ListView) v.findViewById(R.id.list);
         final EditText searchBox = (EditText) v.findViewById(R.id.searchBox);
-        final ArrayAdapter<String> adapter = new ArrayAdapter<String>(context, R.layout.items_view, items);
+        adapter = new ArrayAdapter<String>(context, R.layout.items_view, items);
+
         listView.setAdapter(adapter);
         adb.setView(v);
         alertDialog = adb.create();
@@ -103,7 +107,26 @@ public class SpinnerDialog {
 
             @Override
             public void afterTextChanged(Editable editable) {
-                adapter.getFilter().filter(searchBox.getText().toString());
+                //adapter.getFilter().filter(searchBox.getText().toString());
+                String constraint=searchBox.getText().toString();
+                FilterResults results = new FilterResults();
+                ArrayList<String> filterList;
+                if (constraint != null && constraint.length() > 0) {
+                     filterList = new ArrayList<String>();
+                    for (int i = 0; i < items.size(); i++) {
+                        if ((items.get(i)).contains(constraint.toString())) {
+                            filterList.add(items.get(i));
+                        }
+                    }
+                    results.count = filterList.size();
+                    results.values = filterList;
+                } else {
+                    results.count = items.size();
+                    results.values = items;
+                    filterList=items;
+                }
+              notdata(filterList);
+
             }
         });
 
@@ -114,6 +137,41 @@ public class SpinnerDialog {
             }
         });
         alertDialog.show();
+    }
+
+    @Override
+    protected FilterResults performFiltering(CharSequence constraint) {
+        FilterResults results = new FilterResults();
+        if (constraint != null && constraint.length() > 0) {
+            ArrayList<String> filterList = new ArrayList<String>();
+            for (int i = 0; i < items.size(); i++) {
+                if ((items.get(i)).contains(constraint.toString())) {
+                    filterList.add(items.get(i));
+                }
+            }
+            results.count = filterList.size();
+            results.values = filterList;
+        } else {
+            results.count = items.size();
+            results.values = items;
+        }
+//        adapter = new ArrayAdapter<String>(context, R.layout.items_view, results.values );
+//
+//        listView.setAdapter(adapter);
+        return results;
+    }
+
+    @Override
+    protected void publishResults(CharSequence constraint, FilterResults results) {
+        adapter.notifyDataSetChanged();
+
+    }
+
+    public void notdata(ArrayList<String> filterList)
+    {
+        adapter = new ArrayAdapter<String>(context, R.layout.items_view, filterList );
+
+        listView.setAdapter(adapter);
     }
 
 }
